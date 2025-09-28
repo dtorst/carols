@@ -11,7 +11,8 @@ const notes = ref('')
 
 
 async function load() {
-  const base = import.meta.env.VITE_API_BASE_URL || '/api'
+  const raw = import.meta.env.VITE_API_BASE_URL || '/api'
+  const base = (raw.startsWith('http') || raw.startsWith('/')) ? raw : `https://${raw}`
   const res = await fetch(`${base}/songs/${route.params.id}`, { headers: { Accept: 'application/json' } })
   if (!res.ok) throw new Error(`Failed to load song: ${res.status}`)
 
@@ -37,12 +38,15 @@ function rw(sec=5) { if (audio.value) audio.value.currentTime -= sec }
 
 
 async function saveNotes() {
-  const base = import.meta.env.VITE_API_BASE_URL || '/api'
+  const raw = import.meta.env.VITE_API_BASE_URL || '/api'
+  const base = (raw.startsWith('http') || raw.startsWith('/')) ? raw : `https://${raw}`
+
   const res = await fetch(`${base}/songs/${route.params.id}/notes`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({ notes: notes.value || '' }),
   })
+
   if (!res.ok) throw new Error(`Failed to save notes: ${res.status}`)
 
 

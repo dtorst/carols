@@ -4,7 +4,8 @@ import { ref, onMounted } from 'vue'
 const songs = ref([])
 
 async function load() {
-  const base = import.meta.env.VITE_API_BASE_URL || '/api'
+  const raw = import.meta.env.VITE_API_BASE_URL || '/api'
+  const base = (raw.startsWith('http') || raw.startsWith('/')) ? raw : `https://${raw}`
   const res = await fetch(`${base}/songs`, { headers: { Accept: 'application/json' } })
   if (!res.ok) throw new Error(`Failed to load songs: ${res.status}`)
 
