@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PDF from "pdf-vue3"
-import { $api } from '@/utils/api.js'
 
 const route = useRoute(); const router = useRouter()
 const song = ref(null)
@@ -12,9 +11,12 @@ const notes = ref('')
 
 
 async function load() {
-  const { song: s } = await $api(`/songs/${route.params.id}`)
-  song.value = s
-  notes.value = s?.notes ?? ''
+  const base = import.meta.env.VITE_API_BASE_URL || '/api'
+  const res = await fetch(`${base}/songs/${route.params.id}`, { headers: { Accept: 'application/json' } })
+  if (!res.ok) throw new Error(`Failed to load song: ${res.status}`)
+  const json = await res.json()
+  song.value = json?.song
+  notes.value = json?.song?.notes ?? ''
 }
 
 const tracks = [
@@ -33,10 +35,13 @@ function rw(sec=5) { if (audio.value) audio.value.currentTime -= sec }
 
 
 async function saveNotes() {
-  await $api(`/songs/${route.params.id}/notes`, {
+  const base = import.meta.env.VITE_API_BASE_URL || '/api'
+  const res = await fetch(`${base}/songs/${route.params.id}/notes`, {
     method: 'PATCH',
-    body: { notes: notes.value || '' },
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ notes: notes.value || '' }),
   })
+  if (!res.ok) throw new Error(`Failed to save notes: ${res.status}`)
 
   if (song.value)
     song.value.notes = notes.value || ''

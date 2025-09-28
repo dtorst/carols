@@ -1,13 +1,14 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { $api } from '@/utils/api.js'
 
 const songs = ref([])
 
 async function load() {
-  const { songs: apiSongs } = await $api('/songs')
-  
-  songs.value = apiSongs || []
+  const base = import.meta.env.VITE_API_BASE_URL || '/api'
+  const res = await fetch(`${base}/songs`, { headers: { Accept: 'application/json' } })
+  if (!res.ok) throw new Error(`Failed to load songs: ${res.status}`)
+  const json = await res.json()
+  songs.value = json?.songs || []
 }
 
 const q = ref('')
@@ -18,7 +19,7 @@ const filteredSongs = computed(() => {
   return songs.value.filter(s => s.title.toLowerCase().includes(q.value.toLowerCase()))
 })
 
-onMounted(load, console.log(import.meta.env.VITE_API_URL))
+onMounted(load)
 </script>
 
 
