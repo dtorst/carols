@@ -2,6 +2,7 @@ import { Sequelize } from 'sequelize'
 import 'dotenv/config'
 
 // Prefer a full URL if provided; otherwise construct from discrete vars (Railway style)
+const urlSource = process.env.DB_URL ? 'DB_URL' : process.env.MYSQL_URL ? 'MYSQL_URL' : process.env.DATABASE_URL ? 'DATABASE_URL' : ''
 const url = process.env.DB_URL || process.env.MYSQL_URL || process.env.DATABASE_URL
 
 // Guard: Railway template variables like ${VAR} might not have resolved; fail fast if present
@@ -50,7 +51,7 @@ if (url) {
       // mysql://user:pass@host:port/dbname
       // Avoid logging credentials
       console.log(
-        `DB: connecting via URL host=${u.hostname} port=${u.port || '3306'} db=${u.pathname?.slice(1) || ''} ssl=${shouldUseSsl}`
+        `DB: connecting via ${urlSource} host=${u.hostname} port=${u.port || '3306'} db=${u.pathname?.slice(1) || ''} ssl=${shouldUseSsl}`
       )
     } catch {}
   }
