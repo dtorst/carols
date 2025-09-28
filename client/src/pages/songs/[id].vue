@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PDF from "pdf-vue3"
+import { $api } from '@/utils/api.js'
 
 const route = useRoute(); const router = useRouter()
 const song = ref(null)
@@ -11,11 +12,9 @@ const notes = ref('')
 
 
 async function load() {
-  const res = await fetch(import.meta.env.VITE_API_URL + `/api/songs/${route.params.id}`)
-  const json = await res.json()
-
-  song.value = json.song
-  notes.value = json.song?.notes ?? ''
+  const { song: s } = await $api(`/songs/${route.params.id}`)
+  song.value = s
+  notes.value = s?.notes ?? ''
 }
 
 const tracks = [
@@ -34,9 +33,9 @@ function rw(sec=5) { if (audio.value) audio.value.currentTime -= sec }
 
 
 async function saveNotes() {
-  await fetch(import.meta.env.VITE_API_URL + `/api/songs/${route.params.id}/notes`, {
-    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ notes: notes.value || '' }),
+  await $api(`/songs/${route.params.id}/notes`, {
+    method: 'PATCH',
+    body: { notes: notes.value || '' },
   })
 
   if (song.value)

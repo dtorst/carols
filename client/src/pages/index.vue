@@ -1,13 +1,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { $api } from '@/utils/api.js'
 
 const songs = ref([])
 
 async function load() {
-  const res = await fetch(import.meta.env.VITE_API_URL + '/api/songs')
-  const json = await res.json()
-
-  songs.value = json.songs
+  const { songs: apiSongs } = await $api('/songs')
+  
+  songs.value = apiSongs || []
 }
 
 const q = ref('')
