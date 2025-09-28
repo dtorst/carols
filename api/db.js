@@ -4,6 +4,25 @@ import 'dotenv/config'
 // Prefer a full URL if provided; otherwise construct from discrete vars (Railway style)
 const url = process.env.DB_URL || process.env.MYSQL_URL || process.env.DATABASE_URL
 
+// Guard: Railway template variables like ${VAR} might not have resolved; fail fast if present
+const containsPlaceholder = (v) => typeof v === 'string' && /\$\{[^}]+\}/.test(v)
+if (
+  containsPlaceholder(process.env.DB_URL) ||
+  containsPlaceholder(process.env.MYSQL_URL) ||
+  containsPlaceholder(process.env.DATABASE_URL) ||
+  containsPlaceholder(process.env.MYSQLHOST) ||
+  containsPlaceholder(process.env.DB_HOST) ||
+  containsPlaceholder(process.env.MYSQLDATABASE) ||
+  containsPlaceholder(process.env.DB_NAME) ||
+  containsPlaceholder(process.env.MYSQLUSER) ||
+  containsPlaceholder(process.env.DB_USER) ||
+  containsPlaceholder(process.env.MYSQLPASSWORD) ||
+  containsPlaceholder(process.env.DB_PASSWORD)
+) {
+  console.error('DB: Found unresolved ${...} placeholders in environment variables. Check Railway variable interpolation.')
+  throw new Error('Unresolved environment placeholders')
+}
+
 const shouldUseSsl = [process.env.DB_SSL, process.env.MYSQL_SSL, process.env.DATABASE_SSL]
   .some((v) => String(v).toLowerCase() === 'true')
 const sslCa = process.env.MYSQL_SSL_CA || process.env.DB_SSL_CA || process.env.DATABASE_SSL_CA
