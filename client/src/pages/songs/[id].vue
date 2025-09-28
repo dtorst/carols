@@ -14,7 +14,9 @@ async function load() {
   const base = import.meta.env.VITE_API_BASE_URL || '/api'
   const res = await fetch(`${base}/songs/${route.params.id}`, { headers: { Accept: 'application/json' } })
   if (!res.ok) throw new Error(`Failed to load song: ${res.status}`)
+
   const json = await res.json()
+
   song.value = json?.song
   notes.value = json?.song?.notes ?? ''
 }
@@ -42,6 +44,7 @@ async function saveNotes() {
     body: JSON.stringify({ notes: notes.value || '' }),
   })
   if (!res.ok) throw new Error(`Failed to save notes: ${res.status}`)
+
 
   if (song.value)
     song.value.notes = notes.value || ''

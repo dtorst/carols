@@ -7,7 +7,9 @@ async function load() {
   const base = import.meta.env.VITE_API_BASE_URL || '/api'
   const res = await fetch(`${base}/songs`, { headers: { Accept: 'application/json' } })
   if (!res.ok) throw new Error(`Failed to load songs: ${res.status}`)
+
   const json = await res.json()
+
   songs.value = json?.songs || []
 }
 
