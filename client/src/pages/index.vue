@@ -18,7 +18,7 @@ const filteredSongs = computed(() => {
   return songs.value.filter(s => s.title.toLowerCase().includes(q.value.toLowerCase()))
 })
 
-onMounted(load)
+onMounted(load, console.log(import.meta.env.VITE_API_URL))
 </script>
 
 
