@@ -1,13 +1,25 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import PDF from "pdf-vue3"
+import VuePdfEmbed from 'vue-pdf-embed'
 
 const route = useRoute(); const router = useRouter()
 const song = ref(null)
 const audio = ref(null)
 const selected = ref('ref_full_url')
 const notes = ref('')
+const playerDrawerIsOpen = ref(false)
+
+const currentPage = ref(1)
+const numPages = ref(1)
+
+function onPdfLoaded(pdf) {
+  numPages.value = pdf?.numPages || 1
+}
+
+watch(() => song.value?.score_url, () => {
+  currentPage.value = 1
+})
 
 
 async function load() {
@@ -57,39 +69,73 @@ async function saveNotes() {
 }
 
 
+
+function openPlayer() {
+  playerDrawerIsOpen.value = true
+}
+
+
 onMounted(load)
 </script>
 
 <template>
-  <div class="p-2 sm:p-4">
-    <VBtn 
-      variant="text"
-      color="primary"
-      prepend-icon="tabler-chevron-left"
-      @click="router.back()"
-    >
-      All Songs
-    </VBtn>
+  <VAppBar 
+    density="comfortable" 
+    class="px-2" 
+    scroll-behavior="hide" 
+    scroll-threshold="1"
+  >
+    <template #prepend>
+      <VBtn 
+        variant="text"
+        color="primary"
+        icon="tabler-chevron-left"
+        @click="router.back()"
+      />  
+    </template>
+    <VAppBarTitle>
+      {{ song?.title }}
+    </VAppBarTitle>
+    <template #append>
+      <VBtn 
+        variant="text"
+        color="primary"
+        icon="tabler-play"
+        @click="openPlayer"
+      />
+    </template>
+  </VAppBar>
+  
+  <VNavigationDrawer
+    v-model="playerDrawerIsOpen"
+    temporary
+    location="right"
+    :width="300"
+    absolute
+    scrim="transparent"
+    class="pa-4"
+    :style="{ top: 0, height: '100vh', zIndex: 3000 }"
+  >
     <VRow>
-      <VCol cols="6">
-        <h2 class="text-xl font-semibold mt-2">
-          {{ song?.title }} 
-          <span 
-            v-if="song?.key" 
-            class="opacity-70"
-          >({{ song?.key }})</span>
-        </h2>
-        <div class="text-sm opacity-70">
-          {{ song?.composer }}
+      <VCol
+        cols="12"
+        class="d-flex align-center justify-space-between px-3 py-2"
+      >
+        <div class="text-subtitle-2">
+          Player
         </div>
+        <VBtn
+          variant="text"
+          icon="tabler-x"
+          @click="playerDrawerIsOpen = false"
+        />
       </VCol>
-      <VCol cols="6" class="d-flex align-center justify-end">
-        <!-- Transport / tracks -->
-        <VRow class="me-3">
+      <VCol cols="12">
+        <VRow class="me-3 px-3">
           <VChip 
             v-for="track in tracks"
             :key="track.value"
-            class="mx-1"
+            class="mx-1 mb-2"
             :label="false"
             :value="track.value"
             :disabled="!song?.[track.value]"
@@ -123,59 +169,102 @@ onMounted(load)
             @click="ff"
           />
         </VBtnGroup>
-        <VRow>
+        <VRow class="px-3 mt-5">
           <audio 
             ref="audio" 
             :src="song?.[selected] || ''" 
             controls 
-            class="w-full"
+            class="w-100"
           />
         </VRow>
       </VCol>
     </VRow>
-    
-    <div
-      class="mt-4 grid gap-3" 
-      style="grid-template-columns: 1fr;"
-    >
-      <!-- Score preview -->
-      <VCard 
-        v-if="song?.score_url" 
-        class="p-2 w-full"
-      >
-        <template v-if="song.score_url.toLowerCase().includes('.pdf')">
-          <PDF :src="song.score_url" />
-        </template>
-        <template v-else>
-          <img 
-            :src="song.score_url" 
-            alt="Score" 
-            class="w-full object-contain rounded"
-            @click="() => window.open(song.score_url, '_blank')" 
-          >
-        </template>
-      </VCard>
-      
-      <!-- Notes -->
-      <VCard class="p-2">
-        <div class="flex items-center gap-2 mb-2">
-          <div class="text-sm">
-            Notes
-          </div>
-          <VBtn 
-            size="x-small" 
-            @click="saveNotes"
-          >
-            Save
-          </VBtn>
+    <!-- Notes -->
+    <VCard class="pa-4 position-absolute bottom-0 left-0 right-0">
+      <div class="d-flex align-center justify-space-between gap-2 mb-2">
+        <div class="text-sm">
+          Notes
         </div>
-        <VTextarea 
-          v-model="notes" 
-          auto-grow 
-          rows="3" 
-          placeholder="Breath here; watch vowel on bar 12; take low note on ending…"
-        />
-      </VCard>
+        <VBtn 
+          v-if="notes"
+          size="x-small" 
+          @click="saveNotes"
+        >
+          Save
+        </VBtn>
+      </div>
+      <VTextarea 
+        v-model="notes" 
+        auto-grow 
+        rows="3" 
+        placeholder="Breath here; watch vowel on bar 12; take low note on ending…"
+      />
+    </VCard>
+  </VNavigationDrawer>
+  <VRow class="d-block h-100 w-100">
+    <VBtn
+      variant="text"
+      icon="tabler-chevron-left"            
+      style="position: absolute;z-index:3550; top: 50%; left: 0; transform: translateY(-50%);"
+      :disabled="currentPage <= 1"
+      @click="currentPage = Math.max(1, currentPage - 1)"
+    />
+    <VBtn
+      variant="text"
+      icon="tabler-chevron-right"            
+      style="position: absolute;z-index:3550; top: 50%; right: 0; transform: translateY(-50%);"
+      :disabled="currentPage >= numPages"
+      @click="currentPage = Math.min(numPages, currentPage + 1)"
+    />
+    <div class="p-2 sm:p-4 h-100">
+      <div
+        class="mt-4 grid gap-3 h-100" 
+        style="grid-template-columns: 1fr;"
+      >
+        <!-- Score preview -->
+        <VCard 
+          v-if="song?.score_url" 
+          class="p-2 w-full h-100 d-flex flex-column"
+        >
+          <template v-if="song.score_url.toLowerCase().includes('.pdf')">
+            <div class="d-flex flex-column align-center flex-grow-1 w-100 overflow-auto">
+              <VuePdfEmbed
+                :source="song.score_url"
+                :page="currentPage"
+                class="w-100 h-100"
+                @loaded="onPdfLoaded"
+              />
+              <!--
+                <div class="d-flex align-center justify-center gap-2 mt-2">
+                <VBtn
+                size="small"
+                variant="tonal"
+                icon="tabler-chevron-left"
+                :disabled="currentPage <= 1"
+                @click="currentPage = Math.max(1, currentPage - 1)"
+                />
+                <span class="text-caption px-2">Page {{ currentPage }} / {{ numPages }}</span>
+                <VBtn
+                size="small"
+                variant="tonal"
+                icon="tabler-chevron-right"
+                :disabled="currentPage >= numPages"
+                @click="currentPage = Math.min(numPages, currentPage + 1)"
+                />
+                </div>
+              -->
+            </div>
+          </template>
+          <template v-else>
+            <img 
+              :src="song.score_url" 
+              alt="Score" 
+              class="w-full object-contain rounded"
+              @click="() => window.open(song.score_url, '_blank')" 
+            >
+          </template>
+        </VCard>
+      </div>
     </div>
-  </div>
+  </VRow>
 </template>
