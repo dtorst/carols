@@ -8,7 +8,7 @@ const uploadingCount = ref(0)
 async function presign(file, purpose) {
   const contentType = file.type || 'application/octet-stream'
   
-  const res = await fetch(import.meta.env.VITE_API_URL + '/api/uploads/presign', {
+  const res = await fetch(import.meta.env.VITE_API_BASE_URL + '/api/uploads/presign', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ fileName: file.name, contentType, purpose }),
   })
@@ -56,7 +56,7 @@ async function save() {
     'ref_b_url': form.value.refBUrl || '',
   }
 
-  const res = await fetch(import.meta.env.VITE_API_URL + '/api/songs', {
+  const res = await fetch(import.meta.env.VITE_API_BASE_URL + '/api/songs', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
   })
 
